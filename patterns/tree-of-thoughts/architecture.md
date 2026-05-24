@@ -1,0 +1,1 @@
+# Architecture\n\nUse this pattern when the workflow benefits from explore, score, and prune multiple reasoning branches. Keep model calls behind the shared provider abstraction and keep tools typed.\n

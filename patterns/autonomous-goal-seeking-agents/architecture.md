@@ -1,0 +1,1 @@
+# Architecture\n\nUse this pattern when the workflow benefits from continuously plan, execute, observe, and replan toward goals. Keep model calls behind the shared provider abstraction and keep tools typed.\n

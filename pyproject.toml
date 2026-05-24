@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "production-agent-engineering"
+version = "0.1.0"
+description = "Agentic AI system design patterns for cloud and local-first AI systems."
+requires-python = ">=3.10"
+dependencies = [
+  "pydantic>=2.6",
+  "httpx>=0.26",
+  "tenacity>=8.2",
+  "python-dotenv>=1.0",
+  "fastapi>=0.110",
+  "uvicorn>=0.27",
+]
+
+[project.optional-dependencies]
+cloud = ["openai>=1.30", "anthropic>=0.25"]
+storage = ["redis>=5", "qdrant-client>=1.9", "neo4j>=5", "psycopg[binary]>=3.1"]
+observability = ["opentelemetry-api>=1.24", "opentelemetry-sdk>=1.24", "prometheus-client>=0.20"]
+dev = ["pytest>=8.0", "ruff>=0.4"]
+
+[tool.setuptools.packages.find]
+include = ["shared*"]
+
+[tool.ruff]
+line-length = 100

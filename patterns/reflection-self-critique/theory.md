@@ -1,0 +1,1 @@
+# Theory\n\nReflection / Self-Critique focuses on critique, revise, and verify outputs before finalization. The central design move is to make reasoning state explicit enough to inspect, replay, and evaluate.\n

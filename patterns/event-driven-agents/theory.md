@@ -1,0 +1,1 @@
+# Theory\n\nEvent-Driven Agents focuses on react to events through queues, handlers, and durable state. The central design move is to make reasoning state explicit enough to inspect, replay, and evaluate.\n

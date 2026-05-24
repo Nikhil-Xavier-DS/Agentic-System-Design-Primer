@@ -1,0 +1,5 @@
+flowchart LR
+  Agent --> OTEL[OpenTelemetry]
+  OTEL --> Prometheus
+  OTEL --> Grafana
+  Agent --> Audit[(Audit Log)]

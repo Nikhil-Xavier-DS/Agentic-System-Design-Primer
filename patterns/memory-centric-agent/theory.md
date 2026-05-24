@@ -1,0 +1,1 @@
+# Theory\n\nMemory-Centric Agent focuses on use durable short-term, episodic, and semantic memory. The central design move is to make reasoning state explicit enough to inspect, replay, and evaluate.\n

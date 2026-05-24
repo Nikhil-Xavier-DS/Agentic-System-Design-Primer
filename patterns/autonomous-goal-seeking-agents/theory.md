@@ -1,0 +1,1 @@
+# Theory\n\nAutonomous Goal-Seeking Agents focuses on continuously plan, execute, observe, and replan toward goals. The central design move is to make reasoning state explicit enough to inspect, replay, and evaluate.\n

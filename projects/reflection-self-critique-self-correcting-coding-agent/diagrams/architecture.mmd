@@ -1,0 +1,8 @@
+flowchart TB
+  User --> Agent[Self-Correcting Coding Agent]
+  Agent --> Router[Provider Router]
+  Router --> Ollama[Ollama]
+  Router --> Cloud[Cloud LLM]
+  Agent --> State[(State)]
+  Agent --> Tools[Tools]
+  Agent --> Obs[Observability]

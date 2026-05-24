@@ -1,0 +1,1 @@
+# Theory\n\nReAct Agent focuses on reasoning and acting loop with tools and explicit observations. The central design move is to make reasoning state explicit enough to inspect, replay, and evaluate.\n

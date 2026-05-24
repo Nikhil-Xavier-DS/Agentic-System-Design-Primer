@@ -1,0 +1,1 @@
+# Architecture\n\nUse this pattern when the workflow benefits from let independent specialists contribute to shared working memory. Keep model calls behind the shared provider abstraction and keep tools typed.\n

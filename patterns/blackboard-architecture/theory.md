@@ -1,0 +1,1 @@
+# Theory\n\nBlackboard Architecture focuses on let independent specialists contribute to shared working memory. The central design move is to make reasoning state explicit enough to inspect, replay, and evaluate.\n

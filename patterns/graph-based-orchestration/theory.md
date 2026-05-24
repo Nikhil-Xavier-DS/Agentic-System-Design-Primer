@@ -1,0 +1,1 @@
+# Theory\n\nGraph-Based Orchestration focuses on represent agent workflows as explicit state graphs. The central design move is to make reasoning state explicit enough to inspect, replay, and evaluate.\n

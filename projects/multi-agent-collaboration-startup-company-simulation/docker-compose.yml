@@ -1,0 +1,16 @@
+services:
+  app:
+    build:
+      context: ../..
+      dockerfile: projects/${multi-agent-collaboration-startup-company-simulation_DIR:-multi-agent-collaboration-startup-company-simulation}/Dockerfile
+    environment:
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-ollama}
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3}
+  ollama:
+    image: ollama/ollama:latest
+    ports: ["11434:11434"]
+    volumes:
+      - ollama:/root/.ollama
+volumes:
+  ollama:

@@ -1,0 +1,1 @@
+# Architecture\n\nUse this pattern when the workflow benefits from react to events through queues, handlers, and durable state. Keep model calls behind the shared provider abstraction and keep tools typed.\n

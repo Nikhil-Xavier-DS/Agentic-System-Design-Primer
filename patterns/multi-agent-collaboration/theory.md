@@ -1,0 +1,1 @@
+# Theory\n\nMulti-Agent Collaboration focuses on coordinate specialized peers through shared protocols. The central design move is to make reasoning state explicit enough to inspect, replay, and evaluate.\n

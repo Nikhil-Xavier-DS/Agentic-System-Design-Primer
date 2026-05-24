@@ -1,0 +1,4 @@
+flowchart TB
+  App[Agent App] --> Ollama[Ollama]
+  Ollama --> Models[(Local Models)]
+  App --> Cache[(Redis / Semantic Cache)]
