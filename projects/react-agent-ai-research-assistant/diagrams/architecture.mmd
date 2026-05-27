@@ -5,4 +5,6 @@ flowchart TB
   Router --> Cloud[Cloud LLM]
   Agent --> State[(State)]
   Agent --> Tools[Tools]
+  Tools --> LocalKB[Local Knowledge Search]
+  Tools --> Web[Optional Web Search]
   Agent --> Obs[Observability]
