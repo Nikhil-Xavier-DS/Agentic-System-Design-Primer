@@ -8,6 +8,7 @@ from typing import Any
 
 from shared.llm import ChatMessage, ChatRequest, ModelRouter
 
+from .memory import SQLiteResearchMemory
 from .tools import LocalKnowledgeTool, ResearchTool, ToolResult, WebSearchTool
 
 
@@ -47,25 +48,54 @@ class ResearchAssistantAgent:
         enable_web: bool | None = None,
         max_steps: int = 3,
         web_search_mode: str | None = None,
+        memory: SQLiteResearchMemory | None = None,
     ):
         self.router = router
         self.web_search_mode = web_search_mode or ("off" if enable_web is False else "auto")
         if enable_web is True:
             self.web_search_mode = "auto"
         self.max_steps = max_steps
+        self.memory = memory or SQLiteResearchMemory(memory_path_from_env())
         self.tools = self._build_tools()
 
     async def run(self, task: str) -> str:
         state = self.initialize(task)
+        run_id = self.memory.create_run(
+            task,
+            {
+                "pattern": self.pattern,
+                "web_search_mode": self.web_search_mode,
+                "memory_backend": "sqlite",
+            },
+        )
+        state.artifacts["run_id"] = run_id
+        prior_memories = self.memory.search_memories(task)
+        if prior_memories:
+            state.artifacts["prior_memories"] = [
+                {"kind": memory.kind, "key": memory.key, "value": memory.value}
+                for memory in prior_memories
+            ]
         for query in self._build_research_queries(task)[: self.max_steps]:
             tool = await self._select_tool(task, query)
             thought = f"I need evidence about: {query}"
             result = tool.run(query)
             self.record_observation(state, thought, result)
+            self.memory.save_step(
+                run_id=run_id,
+                step_number=len(state.steps),
+                thought=thought,
+                action=result.tool,
+                action_input=result.query,
+                observation=result.content,
+                sources=result.sources,
+            )
 
         final_answer = await self._synthesize(state)
+        self.memory.save_final_answer(run_id, final_answer)
+        self._write_reusable_memories(state, final_answer)
         trace = self._format_trace(state)
-        return f"{trace}\n\nFinal Answer\n{final_answer}"
+        memory_summary = self._format_memory_summary(state)
+        return f"{memory_summary}\n\n{trace}\n\nFinal Answer\n{final_answer}"
 
     def initialize(self, task: str) -> AgentState:
         return AgentState(task=task, artifacts={"web_search_mode": self.web_search_mode})
@@ -150,6 +180,10 @@ class ResearchAssistantAgent:
         ]
 
     async def _synthesize(self, state: AgentState) -> str:
+        memory_context = "\n".join(
+            f"- {item['kind']}:{item['key']} => {item['value']}"
+            for item in state.artifacts.get("prior_memories", [])
+        )
         evidence = "\n\n".join(
             (
                 f"Thought: {step.thought}\n"
@@ -172,13 +206,34 @@ class ResearchAssistantAgent:
                     ),
                     ChatMessage(
                         role="user",
-                        content=f"Research task: {state.task}\n\nEvidence:\n{evidence}",
+                        content=(
+                            f"Research task: {state.task}\n\n"
+                            f"Relevant prior memory:\n{memory_context or 'none'}\n\n"
+                            f"Evidence:\n{evidence}"
+                        ),
                     ),
                 ],
                 temperature=0.2,
             )
         )
         return response.content
+
+    def _write_reusable_memories(self, state: AgentState, final_answer: str) -> None:
+        task_key = _memory_key(state.task)
+        self.memory.remember(
+            kind="research_summary",
+            key=task_key,
+            value=final_answer[:2000],
+            source=f"research_run:{state.artifacts.get('run_id')}",
+        )
+        for step in state.steps:
+            if step.sources:
+                self.memory.remember(
+                    kind="source_set",
+                    key=_memory_key(step.action_input),
+                    value=", ".join(step.sources[:10]),
+                    source=f"research_run:{state.artifacts.get('run_id')}",
+                )
 
     def _format_trace(self, state: AgentState) -> str:
         lines = ["ReAct Trace"]
@@ -195,6 +250,19 @@ class ResearchAssistantAgent:
             )
         return "\n".join(lines)
 
+    def _format_memory_summary(self, state: AgentState) -> str:
+        prior = state.artifacts.get("prior_memories", [])
+        lines = [
+            "Memory / Storage",
+            f"Backend: sqlite",
+            f"Database: {self.memory.database_path}",
+            f"Run ID: {state.artifacts.get('run_id')}",
+            f"Prior memories used: {len(prior)}",
+        ]
+        for item in prior[:3]:
+            lines.append(f"- {item['kind']}:{item['key']}")
+        return "\n".join(lines)
+
 
 class ReferenceAgent(ResearchAssistantAgent):
     """Backward-compatible alias used by the generated smoke test."""
@@ -205,6 +273,7 @@ class ReferenceAgent(ResearchAssistantAgent):
         enable_web: bool | None = None,
         max_steps: int = 3,
         web_search_mode: str | None = None,
+        memory: SQLiteResearchMemory | None = None,
     ):
         if router is None:
             from shared.llm import build_default_router
@@ -215,6 +284,7 @@ class ReferenceAgent(ResearchAssistantAgent):
             enable_web=enable_web,
             max_steps=max_steps,
             web_search_mode=web_search_mode,
+            memory=memory,
         )
 
 
@@ -226,6 +296,13 @@ def web_search_mode_from_env() -> str:
     if legacy is None:
         return "auto"
     return "auto" if legacy.lower() in {"1", "true", "yes", "on"} else "off"
+
+
+def memory_path_from_env() -> Path:
+    configured = os.getenv("RESEARCH_MEMORY_DB")
+    if configured:
+        return Path(configured).expanduser()
+    return PROJECT_ROOT / "storage/research_memory.sqlite3"
 
 
 def _looks_current_or_external(query: str) -> bool:
@@ -253,3 +330,12 @@ def _extract_json_object(text: str) -> str:
     if start == -1 or end == -1 or end < start:
         return text
     return text[start : end + 1]
+
+
+def _memory_key(text: str) -> str:
+    tokens = [
+        token
+        for token in "".join(ch.lower() if ch.isalnum() else " " for ch in text).split()
+        if token
+    ]
+    return "-".join(tokens[:12]) or "untitled"

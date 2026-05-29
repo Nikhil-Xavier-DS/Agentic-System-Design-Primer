@@ -7,4 +7,6 @@ class ProjectConfig(BaseModel):
     model_provider: str = "mock"
     enable_observability: bool = True
     max_workflow_steps: int = 12
-    checkpoint_backend: str = "memory"
+    checkpoint_backend: str = "sqlite"
+    research_memory_db: str = "storage/research_memory.sqlite3"
+    web_search_mode: str = "auto"
